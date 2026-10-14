@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://hongtrunglang-dran.vn/</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/hero-hong.jpg</image:loc>
+      <image:title>Hồng Trứng Láng D'Ran - Đặc sản trái cây sạch Lâm Đồng</image:title>
+      <image:caption>Hồng trứng láng chín đỏ mềm dẻo cát mịn thắp hương rằm</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/hong-chin-deo.jpg</image:loc>
+      <image:title>Cơm hồng mềm dẻo ngọt thanh</image:title>
+    </image:image>
+  </url>
+</urlset>

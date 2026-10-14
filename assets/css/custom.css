@@ -1,0 +1,177 @@
+/* ==========================================================================
+   HỒNG TRỨNG LÁNG D'RAN - CUSTOM STYLES
+   Tối ưu hiển thị, chuyển động mượt mà và nhận diện thương hiệu quả hồng chín
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
+
+:root {
+  --color-primary: #ea580c;       /* Cam đậm quả hồng chín */
+  --color-primary-dark: #c2410c;
+  --color-secondary: #f97316;     /* Cam tươi */
+  --color-accent: #dc2626;        /* Đỏ ửng cà chua */
+  --color-amber-gold: #d97706;    /* Vàng mật ong cao nguyên */
+  --color-leaf-green: #15803d;    /* Xanh lá cuống hồng */
+  --color-bg-warm: #fffbf7;       /* Nền kem ấm tự nhiên */
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--color-bg-warm);
+}
+
+.font-serif-title {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Nền họa tiết hoa quả tự nhiên tinh tế */
+.bg-warm-pattern {
+  background-color: #fffbf7;
+  background-image: radial-gradient(#f97316 0.75px, transparent 0.75px), radial-gradient(#ea580c 0.75px, #fffbf7 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-opacity: 0.05;
+}
+
+/* Hiệu ứng rung chuông gọi điện thoại nổi bật */
+@keyframes ringPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 16px rgba(234, 88, 12, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(234, 88, 12, 0);
+  }
+}
+
+.btn-ring-pulse {
+  animation: ringPulse 2s infinite ease-in-out;
+}
+
+/* Hiệu ứng thở nhẹ cho Zalo */
+@keyframes zaloPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 104, 255, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(0, 104, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 104, 255, 0);
+  }
+}
+
+.btn-zalo-pulse {
+  animation: zaloPulse 2s infinite ease-in-out;
+}
+
+/* Card bóng mềm cao cấp */
+.card-persimmon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+}
+
+.card-persimmon:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(234, 88, 12, 0.12), 0 8px 10px -6px rgba(234, 88, 12, 0.08);
+  border-color: rgba(234, 88, 12, 0.4);
+}
+
+/* Hiệu ứng vạch chuyển màu quả hồng chín */
+.text-gradient-persimmon {
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 45%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient-persimmon {
+  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+}
+
+.bg-gradient-header {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 60%, #fffbf7 100%);
+}
+
+/* Thanh Sticky Mobile CTA luôn ở dưới đáy màn hình */
+.mobile-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(251, 146, 60, 0.3);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Thẻ thời gian đếm ngược */
+.countdown-box {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.1);
+  border: 1px solid #fed7aa;
+}
+
+/* Hiệu ứng accordion mở mượt mà */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+  opacity: 0;
+}
+
+.accordion-item.active .accordion-content {
+  max-height: 350px;
+  opacity: 1;
+  padding-bottom: 1.25rem;
+}
+
+.accordion-item.active .accordion-icon {
+  transform: rotate(180deg);
+}
+
+/* Huy hiệu giá nổi bật */
+.badge-popular {
+  position: absolute;
+  top: -12px;
+  right: 18px;
+  background: linear-gradient(135deg, #ef4444, #ea580c);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
+}
+
+/* Thanh trượt radio gói sản phẩm */
+.package-card input[type="radio"]:checked + .package-content {
+  border-color: #ea580c;
+  background-color: #fff7ed;
+  box-shadow: 0 0 0 2px #ea580c;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fff7ed;
+}
+::-webkit-scrollbar-thumb {
+  background: #fb923c;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
+}
