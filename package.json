@@ -1,0 +1,23 @@
+{
+  "name": "hong-dran-landingpage",
+  "version": "1.0.0",
+  "description": "Website Landing Page bán Hồng Trứng Láng D'Ran chuẩn SEO, tích hợp thông báo Telegram và triển khai qua Dokloy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "hong-dran",
+    "landingpage",
+    "telegram-bot",
+    "dokloy"
+  ],
+  "author": "Liên Hoa Nguyễn",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1"
+  }
+}

@@ -530,20 +530,23 @@
 
             <!-- Các nút hành động chính -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-              <button type="button" id="btn-order-zalo" 
-                      class="w-full inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 btn-zalo-pulse">
-                <span>💬 Gửi Đơn &amp; Ngày Ship Qua Zalo</span>
+              <button type="button" id="btn-order-submit" 
+                      class="w-full inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl bg-gradient-persimmon text-white font-bold text-base shadow-lg shadow-orange-500/25 hover:shadow-orange-600/35 transition-all transform hover:-translate-y-0.5 btn-ring-pulse">
+                <span>🚀 Đặt Hàng &amp; Nhận Thông Báo Ngay</span>
               </button>
 
-              <a href="tel:0797599056" id="btn-order-call" 
-                 class="w-full inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl bg-gradient-persimmon text-white font-bold text-base shadow-lg shadow-orange-500/25 hover:shadow-orange-600/35 transition-all transform hover:-translate-y-0.5">
-                <span>📞 Gọi Chốt Nhanh: 0797.599.056</span>
-              </a>
+              <button type="button" id="btn-order-zalo" 
+                      class="w-full inline-flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 btn-zalo-pulse">
+                <span>💬 Gửi Đơn &amp; Mở Chat Zalo</span>
+              </button>
             </div>
 
-            <p class="text-[11px] text-center text-gray-500">
-              * Bấm "Gửi Đơn &amp; Ngày Ship Qua Zalo" sẽ tự động tạo tin nhắn đầy đủ số lượng, ngày hẹn ship và mở Zalo của em <strong>0797599056 (Mi Hồng Đà Lạt)</strong> để xác nhận ngay!
-            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2 pt-1">
+              <span>* Đơn hàng sẽ được thông báo tức thì về Telegram của chủ vườn để chuẩn bị giao đúng hẹn!</span>
+              <a href="tel:0797599056" class="text-orange-600 font-bold hover:underline inline-flex items-center gap-1">
+                📞 Hoặc bấm gọi nhanh: 0797.599.056
+              </a>
+            </div>
 
           </form>
 
@@ -1235,6 +1238,71 @@
        title="Gọi điện ngay 0797599056">
       <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
     </a>
+  </div>
+
+  <!-- ================= MODAL THÔNG BÁO ĐẶT HÀNG THÀNH CÔNG ================= -->
+  <div id="order-success-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm" aria-modal="true" role="dialog">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border-2 border-orange-200 transform transition-all text-center relative animate-fade-in">
+      <!-- Nút đóng góc phải -->
+      <button type="button" class="js-close-modal absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center" aria-label="Đóng">&times;</button>
+      
+      <!-- Icon thành công animated -->
+      <div class="w-16 h-16 mx-auto rounded-full bg-green-100 text-green-600 flex items-center justify-center text-3xl shadow-inner mb-4">
+        ✓
+      </div>
+
+      <span class="text-xs font-bold text-orange-600 uppercase tracking-widest bg-orange-100 px-3 py-1 rounded-full">
+        Thông Báo Đơn Hàng Mới
+      </span>
+      <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mt-2 font-serif-title">
+        Đặt Hàng Thành Công! 🎉
+      </h3>
+      <p class="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+        Đơn hàng của bạn đã được chuyển đến điện thoại chủ vườn qua <strong>Telegram</strong>. Em sẽ liên hệ xác nhận và giao đúng ngày ship nhé!
+      </p>
+
+      <!-- Tóm tắt đơn hàng -->
+      <div class="mt-4 p-4 rounded-2xl bg-orange-50/70 border border-orange-200 text-left text-xs space-y-1.5 text-gray-700">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Khách hàng:</span>
+          <strong id="modal-summary-name" class="text-gray-900">Chị Lan</strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Số điện thoại:</span>
+          <strong id="modal-summary-phone" class="text-gray-900">090...</strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Số lượng:</span>
+          <strong id="modal-summary-package" class="text-orange-600 font-bold">3kg</strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Ngày ship hẹn:</span>
+          <strong id="modal-summary-date" class="text-gray-900">Thứ Hai 19/10</strong>
+        </div>
+        <div class="pt-2 border-t border-orange-200 flex justify-between text-sm">
+          <span class="font-bold text-gray-700">Tổng tạm tính:</span>
+          <strong id="modal-summary-total" class="font-extrabold text-red-600">180.000 đ</strong>
+        </div>
+      </div>
+
+      <!-- Nút hành động nhanh trên modal -->
+      <div class="mt-6 space-y-2.5">
+        <a href="https://zalo.me/0797599056" target="_blank" rel="noopener noreferrer" 
+           class="w-full inline-flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition-all">
+          <span>💬 Mở Zalo Xác Nhận Thêm Với Shop</span>
+        </a>
+
+        <a href="tel:0797599056" 
+           class="w-full inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 font-bold text-xs transition-all">
+          <span>📞 Gọi Trực Tiếp 0797.599.056</span>
+        </a>
+
+        <button type="button" class="js-close-modal w-full py-2 text-xs font-semibold text-gray-400 hover:text-gray-600">
+          Đóng cửa sổ này
+        </button>
+      </div>
+
+    </div>
   </div>
 
   <!-- JavaScript Modules -->

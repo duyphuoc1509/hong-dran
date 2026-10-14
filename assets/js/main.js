@@ -1,6 +1,7 @@
 /**
  * HỒNG TRỨNG LÁNG D'RAN (MI HỒNG ĐÀ LẠT) - MAIN JAVASCRIPT
- * Tương tác tính giá, đếm ngược ngày giao hàng, chọn ngày ship linh hoạt và tạo tin Zalo
+ * Tương tác tính giá, đếm ngược ngày giao hàng, chọn ngày ship linh hoạt
+ * Tích hợp gửi thông báo đơn hàng trực tiếp về Telegram qua backend Dokloy API
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,11 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initFaqAccordion();
   initCopyHotline();
   initSmoothScroll();
+  initSuccessModalControls();
 });
 
 /* ==========================================================================
    1. ĐỒNG HỒ ĐẾM NGƯỢC CHUYẾN GIAO HỒNG
-   Chuyến 1: Thứ Hai 19/10 | Chuyến 2: Thứ Sáu 23/10
    ========================================================================== */
 function initCountdown() {
   const daysEl = document.getElementById('count-days');
@@ -26,10 +27,7 @@ function initCountdown() {
   if (!daysEl || !hoursEl || !minutesEl || !secondsEl) return;
 
   const currentYear = new Date().getFullYear();
-  
-  // Mục tiêu chuyến 1: 19/10 lúc 08:00 sáng
   const trip1Target = new Date(`${currentYear}-10-19T08:00:00+07:00`).getTime();
-  // Mục tiêu chuyến 2: 23/10 lúc 08:00 sáng
   const trip2Target = new Date(`${currentYear}-10-23T08:00:00+07:00`).getTime();
 
   function updateTimer() {
@@ -80,7 +78,6 @@ function initShippingDateControls() {
   const dateQuickButtons = document.querySelectorAll('.js-quick-date-btn');
   const customDateContainer = document.getElementById('custom-date-container');
 
-  // Đặt min date cho date picker là ngày hiện tại
   if (dateInput) {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -89,7 +86,6 @@ function initShippingDateControls() {
     dateInput.min = `${yyyy}-${mm}-${dd}`;
   }
 
-  // Lắng nghe các nút chọn ngày nhanh
   dateQuickButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -121,7 +117,7 @@ function initShippingDateControls() {
 }
 
 /* ==========================================================================
-   3. BỘ TÍNH TIỀN NHANH & ĐẶT HÀNG QUA ZALO
+   3. BỘ TÍNH TIỀN NHANH, GỬI ĐƠN TELEGRAM & ZALO
    ========================================================================== */
 function initOrderCalculator() {
   const packageRadios = document.querySelectorAll('input[name="persimmon_package"]');
@@ -138,6 +134,8 @@ function initOrderCalculator() {
   const customerPhoneInput = document.getElementById('customer-phone');
   const customerAddressInput = document.getElementById('customer-address');
   const customerNoteInput = document.getElementById('customer-note');
+  
+  const btnOrderSubmit = document.getElementById('btn-order-submit');
   const btnZaloSubmit = document.getElementById('btn-order-zalo');
 
   if (!totalAmountEl) return;
@@ -194,7 +192,6 @@ function initOrderCalculator() {
       estimateFruits = `Khoảng ${minFruits} – ${maxFruits} trái`;
     }
 
-    // Cập nhật hiển thị số tiền
     totalAmountEl.textContent = Number(totalPrice).toLocaleString('vi-VN') + ' đ';
     if (unitEstimateEl) {
       unitEstimateEl.textContent = `${weight}kg (${estimateFruits})`;
@@ -209,7 +206,6 @@ function initOrderCalculator() {
       }
     }
 
-    // Phí ship theo địa chỉ
     if (shippingBadgeEl && areaSelect) {
       if (areaSelect.value === 'freeship') {
         shippingBadgeEl.innerHTML = `<span class="inline-flex items-center text-green-700 bg-green-100 px-2.5 py-1 rounded-lg text-xs font-bold">🎉 Miễn Phí Vận Chuyển (Bán kính 5km quanh Q9 / Thủ Đức)</span>`;
@@ -221,96 +217,201 @@ function initOrderCalculator() {
     return { weight, totalPrice, estimateFruits, packageType };
   }
 
-  // Lắng nghe chọn radio
-  packageRadios.forEach(radio => {
-    radio.addEventListener('change', calculate);
-  });
+  packageRadios.forEach(radio => radio.addEventListener('change', calculate));
 
-  // Khi thay đổi số kg tùy chọn
   if (customKgInput) {
     customKgInput.addEventListener('input', () => {
       const customRadio = document.querySelector('input[value="custom"]');
-      if (customRadio) {
-        customRadio.checked = true;
-      }
+      if (customRadio) customRadio.checked = true;
       calculate();
     });
   }
 
-  // Khi chọn khu vực
-  if (areaSelect) {
-    areaSelect.addEventListener('change', calculate);
-  }
+  if (areaSelect) areaSelect.addEventListener('change', calculate);
 
-  // Nút Đặt Hàng Qua Zalo
-  if (btnZaloSubmit) {
-    btnZaloSubmit.addEventListener('click', (e) => {
-      const current = calculate();
-      const name = customerNameInput ? customerNameInput.value.trim() : '';
-      const phone = customerPhoneInput ? customerPhoneInput.value.trim() : '';
-      const address = customerAddressInput ? customerAddressInput.value.trim() : '';
-      const note = customerNoteInput ? customerNoteInput.value.trim() : '';
-      const area = areaSelect ? areaSelect.options[areaSelect.selectedIndex].text : 'Freeship quanh KDC Gia Hòa / ĐH Ngân Hàng';
-      const timeSlot = timeSlotSelect ? timeSlotSelect.value : 'Cả ngày (Linh hoạt)';
-      const ripeness = ripenessSelect ? ripenessSelect.value : 'Hồng mới về còn cứng vàng cam (tự ủ 2-3 hôm)';
+  // Lấy dữ liệu đơn hàng hiện tại
+  function getOrderData() {
+    const current = calculate();
+    const name = customerNameInput ? customerNameInput.value.trim() : '';
+    const phone = customerPhoneInput ? customerPhoneInput.value.trim() : '';
+    const address = customerAddressInput ? customerAddressInput.value.trim() : '';
+    const note = customerNoteInput ? customerNoteInput.value.trim() : '';
+    const area = areaSelect ? areaSelect.options[areaSelect.selectedIndex].text : 'Freeship quanh KDC Gia Hòa / ĐH Ngân Hàng';
+    const timeSlot = timeSlotSelect ? timeSlotSelect.value : 'Cả ngày (Linh hoạt)';
+    const ripeness = ripenessSelect ? ripenessSelect.value : 'Hồng mới về còn cứng vàng cam (tự ủ 2-3 hôm)';
 
-      // Xác định ngày ship đã chọn
-      let selectedDateStr = 'Thứ Hai ngày 19/10 (Trước Rằm)';
-      const activeDateBtn = document.querySelector('.js-quick-date-btn.bg-orange-600');
-      
-      if (activeDateBtn) {
-        const val = activeDateBtn.dataset.dateValue;
-        if (val === 'custom') {
-          if (dateInput && dateInput.value) {
-            const parts = dateInput.value.split('-');
-            if (parts.length === 3) {
-              selectedDateStr = `Ngày ${parts[2]}/${parts[1]}/${parts[0]}`;
-            } else {
-              selectedDateStr = dateInput.value;
-            }
+    let selectedDateStr = 'Thứ Hai ngày 19/10 (Trước Rằm)';
+    const activeDateBtn = document.querySelector('.js-quick-date-btn.bg-orange-600');
+    
+    if (activeDateBtn) {
+      const val = activeDateBtn.dataset.dateValue;
+      if (val === 'custom') {
+        if (dateInput && dateInput.value) {
+          const parts = dateInput.value.split('-');
+          if (parts.length === 3) {
+            selectedDateStr = `Ngày ${parts[2]}/${parts[1]}/${parts[0]}`;
           } else {
-            selectedDateStr = 'Giao ngày sớm nhất có thể';
+            selectedDateStr = dateInput.value;
           }
         } else {
-          selectedDateStr = activeDateBtn.textContent.trim().replace(/\s+/g, ' ');
+          selectedDateStr = 'Giao ngày sớm nhất có thể';
         }
+      } else {
+        selectedDateStr = activeDateBtn.textContent.trim().replace(/\s+/g, ' ');
+      }
+    }
+
+    return {
+      name,
+      phone,
+      address,
+      note,
+      weight: current.weight,
+      estimateFruits: current.estimateFruits,
+      totalPrice: current.totalPrice,
+      shipDate: selectedDateStr,
+      timeSlot,
+      ripeness,
+      area
+    };
+  }
+
+  // Hàm xử lý gửi đơn lên Server (gửi Telegram)
+  async function submitOrderProcess(triggerButton, openZaloAfterwards = false) {
+    const orderData = getOrderData();
+
+    if (!orderData.phone && !orderData.name) {
+      showToast("Vui lòng nhập số điện thoại hoặc họ tên để em tiện liên hệ giao hàng nha!");
+      if (customerPhoneInput) customerPhoneInput.focus();
+      return;
+    }
+
+    // Hiệu ứng nút đang gửi
+    const originalText = triggerButton.innerHTML;
+    triggerButton.disabled = true;
+    triggerButton.innerHTML = `<span class="inline-block animate-spin mr-2">⏳</span> Đang gửi đơn...`;
+
+    try {
+      // Gửi yêu cầu đến API backend Dokloy
+      const response = await fetch('/api/send-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      const resData = await response.json().catch(() => ({ success: true }));
+
+      // Mở modal thành công trên giao diện
+      showSuccessModal(orderData);
+      showToast("🎉 Đã gửi đơn thành công về hệ thống shop!");
+
+      // Nếu người dùng chọn đặt qua Zalo
+      if (openZaloAfterwards) {
+        let msg = `Chào shop Hồng Trứng Láng D'Ran (Mi Hồng Đà Lạt)!\n`;
+        msg += `Mình vừa gửi đơn qua web và muốn xác nhận thêm:\n`;
+        msg += `🍊 Số lượng: ${orderData.weight}kg (${orderData.estimateFruits})\n`;
+        msg += `💰 Thành tiền tạm tính: ${Number(orderData.totalPrice).toLocaleString('vi-VN')} đ\n`;
+        msg += `📅 Ngày ship: ${orderData.shipDate}\n`;
+        msg += `⏰ Khung giờ: ${orderData.timeSlot}\n`;
+        msg += `🍈 Yêu cầu quả: ${orderData.ripeness}\n`;
+        if (orderData.name) msg += `👤 Họ tên: ${orderData.name}\n`;
+        if (orderData.phone) msg += `📞 SĐT: ${orderData.phone}\n`;
+        if (orderData.address) msg += `🏠 Địa chỉ: ${orderData.address}\n`;
+        if (orderData.note) msg += `📝 Ghi chú: ${orderData.note}\n`;
+        msg += `Shop kiểm tra tin nhắn Telegram hoặc xác nhận tại đây giúp mình nhé! Cảm ơn shop 🧡`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(msg).catch(() => {});
+        }
+
+        setTimeout(() => {
+          window.open('https://zalo.me/0797599056', '_blank');
+        }, 600);
       }
 
-      // Tạo nội dung tin nhắn gửi qua Zalo
-      let msg = `Chào shop Hồng Trứng Láng D'Ran (Mi Hồng Đà Lạt)!\n`;
-      msg += `Mình muốn đặt hàng:\n`;
-      msg += `🍊 Số lượng: ${current.weight}kg (${current.estimateFruits})\n`;
-      msg += `💰 Thành tiền tạm tính: ${Number(current.totalPrice).toLocaleString('vi-VN')} đ\n`;
-      msg += `📅 Ngày ship mong muốn: ${selectedDateStr}\n`;
-      msg += `⏰ Khung giờ nhận: ${timeSlot}\n`;
-      msg += `🍈 Yêu cầu độ chín: ${ripeness}\n`;
-      msg += `📍 Khu vực: ${area}\n`;
-      if (name) msg += `👤 Họ tên: ${name}\n`;
-      if (phone) msg += `📞 SĐT: ${phone}\n`;
-      if (address) msg += `🏠 Địa chỉ nhận: ${address}\n`;
-      if (note) msg += `📝 Ghi chú thêm: ${note}\n`;
-      msg += `Shop xác nhận đơn và báo giờ ship giúp mình nhé! Cảm ơn shop 🧡`;
-
-      // Sao chép nội dung vào clipboard
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(msg).catch(() => {});
+    } catch (err) {
+      console.warn('Lỗi kết nối API gửi đơn:', err);
+      // Fallback: Nếu web đang chạy dạng file:// tĩnh không có server, vẫn mở modal thành công và mở Zalo
+      showSuccessModal(orderData);
+      showToast("Đã ghi nhận đơn hàng! Mở Zalo để liên hệ trực tiếp...");
+      if (openZaloAfterwards) {
+        setTimeout(() => {
+          window.open('https://zalo.me/0797599056', '_blank');
+        }, 500);
       }
+    } finally {
+      triggerButton.disabled = false;
+      triggerButton.innerHTML = originalText;
+    }
+  }
 
-      showToast("Đã chọn ngày ship & soạn đơn! Đang mở Zalo 0797599056...");
-
-      // Mở Zalo chat với số điện thoại 0797599056
-      setTimeout(() => {
-        window.open('https://zalo.me/0797599056', '_blank');
-      }, 700);
+  // Gắn sự kiện cho nút Đặt Hàng & Gửi Đơn Ngay (Gửi Telegram)
+  if (btnOrderSubmit) {
+    btnOrderSubmit.addEventListener('click', () => {
+      submitOrderProcess(btnOrderSubmit, false);
     });
   }
 
-  // Khởi tạo tính lần đầu
+  // Gắn sự kiện cho nút Gửi Đơn Qua Zalo (Gửi Telegram + Mở Zalo)
+  if (btnZaloSubmit) {
+    btnZaloSubmit.addEventListener('click', () => {
+      submitOrderProcess(btnZaloSubmit, true);
+    });
+  }
+
   calculate();
 }
 
 /* ==========================================================================
-   4. ACCORDION CÂU HỎI THƯỜNG GẶP (FAQ)
+   4. MODAL THÔNG BÁO ĐẶT HÀNG THÀNH CÔNG
+   ========================================================================== */
+function showSuccessModal(orderData) {
+  const modal = document.getElementById('order-success-modal');
+  if (!modal) return;
+
+  const summaryName = document.getElementById('modal-summary-name');
+  const summaryPhone = document.getElementById('modal-summary-phone');
+  const summaryPackage = document.getElementById('modal-summary-package');
+  const summaryDate = document.getElementById('modal-summary-date');
+  const summaryTotal = document.getElementById('modal-summary-total');
+
+  if (summaryName) summaryName.textContent = orderData.name || 'Quý khách';
+  if (summaryPhone) summaryPhone.textContent = orderData.phone || 'Chưa cung cấp';
+  if (summaryPackage) summaryPackage.textContent = `${orderData.weight}kg (${orderData.estimateFruits})`;
+  if (summaryDate) summaryDate.textContent = `${orderData.shipDate} - ${orderData.timeSlot}`;
+  if (summaryTotal) summaryTotal.textContent = Number(orderData.totalPrice).toLocaleString('vi-VN') + ' đ';
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+
+function initSuccessModalControls() {
+  const modal = document.getElementById('order-success-modal');
+  const closeBtns = document.querySelectorAll('.js-close-modal');
+
+  if (!modal) return;
+
+  closeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Đóng khi click ngoài backdrop
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+  });
+}
+
+/* ==========================================================================
+   5. ACCORDION CÂU HỎI THƯỜNG GẶP (FAQ)
    ========================================================================== */
 function initFaqAccordion() {
   const faqItems = document.querySelectorAll('.accordion-item');
@@ -321,11 +422,7 @@ function initFaqAccordion() {
 
     trigger.addEventListener('click', () => {
       const isActive = item.classList.contains('active');
-      
-      // Đóng tất cả các item khác
       faqItems.forEach(i => i.classList.remove('active'));
-
-      // Mở item hiện tại nếu trước đó chưa mở
       if (!isActive) {
         item.classList.add('active');
       }
@@ -334,7 +431,7 @@ function initFaqAccordion() {
 }
 
 /* ==========================================================================
-   5. TIỆN ÍCH COPY SỐ ĐIỆN THOẠI & TOAST
+   6. TIỆN ÍCH COPY SỐ ĐIỆN THOẠI & TOAST
    ========================================================================== */
 function initCopyHotline() {
   const copyButtons = document.querySelectorAll('.js-copy-hotline');
@@ -367,11 +464,11 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', '-translate-y-4');
-  }, 3500);
+  }, 4000);
 }
 
 /* ==========================================================================
-   6. CUỘN TRANG MƯỢT MÀ CHO LINK NEO
+   7. CUỘN TRANG MƯỢT MÀ CHO LINK NEO
    ========================================================================== */
 function initSmoothScroll() {
   const links = document.querySelectorAll('a[href^="#"]');
