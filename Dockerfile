@@ -12,10 +12,10 @@ COPY . .
 
 # Khai báo biến môi trường mặc định
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=10021
 
-# Mở cổng 3000 phục vụ truy cập
-EXPOSE 3000
+# Mở cổng 10021 phục vụ truy cập
+EXPOSE 10021
 
 # Lệnh khởi chạy ứng dụng
 CMD ["node", "server.js"]
