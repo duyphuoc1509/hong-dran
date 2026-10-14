@@ -7,13 +7,21 @@
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://hongtrunglang-dran.vn/assets/images/hero-hong.jpg</image:loc>
-      <image:title>Hồng Trứng Láng D'Ran - Đặc sản trái cây sạch Lâm Đồng</image:title>
-      <image:caption>Hồng trứng láng chín đỏ mềm dẻo cát mịn thắp hương rằm</image:caption>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/hong-ro-do-chin.jpg</image:loc>
+      <image:title>Rổ hồng trứng láng D'Ran chín đỏ bóng tự nhiên - Mi Hồng Đà Lạt</image:title>
+      <image:caption>Hồng chín cây tự nhiên hái mới mỗi ngày</image:caption>
     </image:image>
     <image:image>
-      <image:loc>https://hongtrunglang-dran.vn/assets/images/hong-chin-deo.jpg</image:loc>
-      <image:title>Cơm hồng mềm dẻo ngọt thanh</image:title>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/hong-thung-giay-bao.jpg</image:loc>
+      <image:title>Thùng hồng mới về lót giấy báo chống dập</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/vuon-hong-that-1.jpg</image:loc>
+      <image:title>Vườn hồng D'Ran Đơn Dương Lâm Đồng</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://hongtrunglang-dran.vn/assets/images/bo-anh-quang-cao.jpg</image:loc>
+      <image:title>Bộ ảnh thực tế hồng D'Ran dâng lễ thắp hương rằm</image:title>
     </image:image>
   </url>
 </urlset>

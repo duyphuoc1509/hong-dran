@@ -1,10 +1,11 @@
 /**
- * HỒNG TRỨNG LÁNG D'RAN - MAIN JAVASCRIPT
- * Tương tác tính giá, đếm ngược ngày giao hàng, mở Zalo đặt hàng nhanh
+ * HỒNG TRỨNG LÁNG D'RAN (MI HỒNG ĐÀ LẠT) - MAIN JAVASCRIPT
+ * Tương tác tính giá, đếm ngược ngày giao hàng, chọn ngày ship linh hoạt và tạo tin Zalo
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
+  initShippingDateControls();
   initOrderCalculator();
   initFaqAccordion();
   initCopyHotline();
@@ -72,7 +73,55 @@ function initCountdown() {
 }
 
 /* ==========================================================================
-   2. BỘ TÍNH TIỀN NHANH & ĐẶT HÀNG QUA ZALO
+   2. KHỞI TẠO ĐIỀU KHIỂN CHỌN NGÀY SHIP LINH HOẠT
+   ========================================================================== */
+function initShippingDateControls() {
+  const dateInput = document.getElementById('order-custom-date');
+  const dateQuickButtons = document.querySelectorAll('.js-quick-date-btn');
+  const customDateContainer = document.getElementById('custom-date-container');
+
+  // Đặt min date cho date picker là ngày hiện tại
+  if (dateInput) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.min = `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Lắng nghe các nút chọn ngày nhanh
+  dateQuickButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      dateQuickButtons.forEach(b => {
+        b.classList.remove('bg-orange-600', 'text-white', 'border-orange-600');
+        b.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+      });
+
+      btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+      btn.classList.add('bg-orange-600', 'text-white', 'border-orange-600');
+
+      const targetValue = btn.dataset.dateValue;
+
+      if (targetValue === 'custom') {
+        if (customDateContainer) {
+          customDateContainer.classList.remove('hidden');
+          if (dateInput) dateInput.focus();
+        }
+      } else {
+        if (customDateContainer) {
+          customDateContainer.classList.add('hidden');
+        }
+        if (dateInput && btn.dataset.dateIso) {
+          dateInput.value = btn.dataset.dateIso;
+        }
+      }
+    });
+  });
+}
+
+/* ==========================================================================
+   3. BỘ TÍNH TIỀN NHANH & ĐẶT HÀNG QUA ZALO
    ========================================================================== */
 function initOrderCalculator() {
   const packageRadios = document.querySelectorAll('input[name="persimmon_package"]');
@@ -81,13 +130,15 @@ function initOrderCalculator() {
   const unitEstimateEl = document.getElementById('calc-unit-estimate');
   const savingEl = document.getElementById('calc-saving-badge');
   const shippingBadgeEl = document.getElementById('calc-shipping-badge');
-  const tripSelect = document.getElementById('order-trip-select');
   const areaSelect = document.getElementById('order-area-select');
+  const timeSlotSelect = document.getElementById('order-time-slot');
+  const ripenessSelect = document.getElementById('order-ripeness-pref');
+  const dateInput = document.getElementById('order-custom-date');
   const customerNameInput = document.getElementById('customer-name');
   const customerPhoneInput = document.getElementById('customer-phone');
   const customerAddressInput = document.getElementById('customer-address');
+  const customerNoteInput = document.getElementById('customer-note');
   const btnZaloSubmit = document.getElementById('btn-order-zalo');
-  const btnDirectCall = document.getElementById('btn-order-call');
 
   if (!totalAmountEl) return;
 
@@ -143,7 +194,7 @@ function initOrderCalculator() {
       estimateFruits = `Khoảng ${minFruits} – ${maxFruits} trái`;
     }
 
-    // Cập nhật giao diện
+    // Cập nhật hiển thị số tiền
     totalAmountEl.textContent = Number(totalPrice).toLocaleString('vi-VN') + ' đ';
     if (unitEstimateEl) {
       unitEstimateEl.textContent = `${weight}kg (${estimateFruits})`;
@@ -161,9 +212,9 @@ function initOrderCalculator() {
     // Phí ship theo địa chỉ
     if (shippingBadgeEl && areaSelect) {
       if (areaSelect.value === 'freeship') {
-        shippingBadgeEl.innerHTML = `<span class="inline-flex items-center text-green-700 bg-green-100 px-2 py-0.5 rounded text-xs font-semibold">🎉 Miễn Phí Vận Chuyển (Bán kính 5km)</span>`;
+        shippingBadgeEl.innerHTML = `<span class="inline-flex items-center text-green-700 bg-green-100 px-2.5 py-1 rounded-lg text-xs font-bold">🎉 Miễn Phí Vận Chuyển (Bán kính 5km quanh Q9 / Thủ Đức)</span>`;
       } else {
-        shippingBadgeEl.innerHTML = `<span class="inline-flex items-center text-orange-700 bg-orange-100 px-2 py-0.5 rounded text-xs font-semibold">🚚 Hỗ trợ tiền ship COD khi mua túi 3kg/5kg</span>`;
+        shippingBadgeEl.innerHTML = `<span class="inline-flex items-center text-orange-700 bg-orange-100 px-2.5 py-1 rounded-lg text-xs font-bold">🚚 Nhận COD toàn quốc (Mua túi 3kg/5kg hỗ trợ tiền ship tối đa)</span>`;
       }
     }
 
@@ -198,26 +249,54 @@ function initOrderCalculator() {
       const name = customerNameInput ? customerNameInput.value.trim() : '';
       const phone = customerPhoneInput ? customerPhoneInput.value.trim() : '';
       const address = customerAddressInput ? customerAddressInput.value.trim() : '';
-      const trip = tripSelect ? tripSelect.options[tripSelect.selectedIndex].text : 'Thứ Hai 19/10';
+      const note = customerNoteInput ? customerNoteInput.value.trim() : '';
       const area = areaSelect ? areaSelect.options[areaSelect.selectedIndex].text : 'Freeship quanh KDC Gia Hòa / ĐH Ngân Hàng';
+      const timeSlot = timeSlotSelect ? timeSlotSelect.value : 'Cả ngày (Linh hoạt)';
+      const ripeness = ripenessSelect ? ripenessSelect.value : 'Hồng mới về còn cứng vàng cam (tự ủ 2-3 hôm)';
 
-      let msg = `Chào shop Hồng Trứng Láng D'Ran!\n`;
+      // Xác định ngày ship đã chọn
+      let selectedDateStr = 'Thứ Hai ngày 19/10 (Trước Rằm)';
+      const activeDateBtn = document.querySelector('.js-quick-date-btn.bg-orange-600');
+      
+      if (activeDateBtn) {
+        const val = activeDateBtn.dataset.dateValue;
+        if (val === 'custom') {
+          if (dateInput && dateInput.value) {
+            const parts = dateInput.value.split('-');
+            if (parts.length === 3) {
+              selectedDateStr = `Ngày ${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else {
+              selectedDateStr = dateInput.value;
+            }
+          } else {
+            selectedDateStr = 'Giao ngày sớm nhất có thể';
+          }
+        } else {
+          selectedDateStr = activeDateBtn.textContent.trim().replace(/\s+/g, ' ');
+        }
+      }
+
+      // Tạo nội dung tin nhắn gửi qua Zalo
+      let msg = `Chào shop Hồng Trứng Láng D'Ran (Mi Hồng Đà Lạt)!\n`;
       msg += `Mình muốn đặt hàng:\n`;
       msg += `🍊 Số lượng: ${current.weight}kg (${current.estimateFruits})\n`;
       msg += `💰 Thành tiền tạm tính: ${Number(current.totalPrice).toLocaleString('vi-VN')} đ\n`;
-      msg += `🚚 Chuyến giao mong muốn: ${trip}\n`;
+      msg += `📅 Ngày ship mong muốn: ${selectedDateStr}\n`;
+      msg += `⏰ Khung giờ nhận: ${timeSlot}\n`;
+      msg += `🍈 Yêu cầu độ chín: ${ripeness}\n`;
       msg += `📍 Khu vực: ${area}\n`;
       if (name) msg += `👤 Họ tên: ${name}\n`;
       if (phone) msg += `📞 SĐT: ${phone}\n`;
       if (address) msg += `🏠 Địa chỉ nhận: ${address}\n`;
-      msg += `Shop xác nhận đơn giúp mình nhé! Cảm ơn shop.`;
+      if (note) msg += `📝 Ghi chú thêm: ${note}\n`;
+      msg += `Shop xác nhận đơn và báo giờ ship giúp mình nhé! Cảm ơn shop 🧡`;
 
       // Sao chép nội dung vào clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(msg).catch(() => {});
       }
 
-      showToast("Đã soạn sẵn thông tin đơn! Đang mở Zalo shop 0797599056...");
+      showToast("Đã chọn ngày ship & soạn đơn! Đang mở Zalo 0797599056...");
 
       // Mở Zalo chat với số điện thoại 0797599056
       setTimeout(() => {
@@ -231,7 +310,7 @@ function initOrderCalculator() {
 }
 
 /* ==========================================================================
-   3. ACCORDION CÂU HỎI THƯỜNG GẶP (FAQ)
+   4. ACCORDION CÂU HỎI THƯỜNG GẶP (FAQ)
    ========================================================================== */
 function initFaqAccordion() {
   const faqItems = document.querySelectorAll('.accordion-item');
@@ -255,7 +334,7 @@ function initFaqAccordion() {
 }
 
 /* ==========================================================================
-   4. TIỆN ÍCH COPY SỐ ĐIỆN THOẠI & TOAST
+   5. TIỆN ÍCH COPY SỐ ĐIỆN THOẠI & TOAST
    ========================================================================== */
 function initCopyHotline() {
   const copyButtons = document.querySelectorAll('.js-copy-hotline');
@@ -292,7 +371,7 @@ function showToast(message) {
 }
 
 /* ==========================================================================
-   5. CUỘN TRANG MƯỢT MÀ CHO LINK NEO
+   6. CUỘN TRANG MƯỢT MÀ CHO LINK NEO
    ========================================================================== */
 function initSmoothScroll() {
   const links = document.querySelectorAll('a[href^="#"]');
