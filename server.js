@@ -10,20 +10,42 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 10021;
+const PORT = parseInt(process.env.PORT, 10) || 10021;
+
+// Tin tưởng proxy (Traefik / Dokloy / Nginx)
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Log request trực quan giúp theo dõi truy cập trên Dokloy / Docker logs
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
 // Phục vụ các file tĩnh trong thư mục dự án
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), {
+  index: 'index.html',
+  maxAge: '1h'
+}));
+
+// Route trang chủ rõ ràng (Tránh bị treo trên reverse proxy)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Health check endpoint cho Dokloy / Docker container monitoring
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
+    port: PORT,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     telegramConfigured: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID)
@@ -115,7 +137,6 @@ app.post('/api/send-order', async (req, res) => {
         message: 'Đơn hàng của bạn đã được gửi thành công đến Telegram của nhà vườn! Em sẽ liên hệ sớm nhất.'
       });
     } else {
-      // Trường hợp chưa điền biến môi trường trên Dokloy (Chế độ mô phỏng)
       console.warn('⚠️ [CHƯA CẤU HÌNH BIẾN MÔI TRƯỜNG TELEGRAM] Đơn hàng nhận được:');
       console.log({
         customerName,
@@ -143,15 +164,25 @@ app.post('/api/send-order', async (req, res) => {
   }
 });
 
-// Chuyển hướng các route khác về index.html (SPA fallback)
-app.get('*', (req, res) => {
+// Fallback cho SPA (chỉ những route không chứa đuôi mở rộng file tĩnh)
+app.get('*', (req, res, next) => {
+  if (req.path.includes('.')) {
+    return next();
+  }
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Khởi chạy server
-app.listen(PORT, '0.0.0.0', () => {
+// Xử lý 404 cho file không tìm thấy
+app.use((req, res) => {
+  res.status(404).send('Không tìm thấy tệp yêu cầu!');
+});
+
+// Khởi chạy server: Lắng nghe trên mọi interface (IPv4 & IPv6 dual-stack) để tránh lỗi connection refused / treo khi curl localhost
+const server = app.listen(PORT, () => {
+  const addr = server.address();
   console.log(`====================================================`);
   console.log(`🍊 Website Hồng Chín D'Ran đang chạy tại cổng: ${PORT}`);
+  console.log(`👉 Bound address: ${JSON.stringify(addr)}`);
   console.log(`👉 Truy cập local: http://localhost:${PORT}`);
   console.log(`👉 Health check:   http://localhost:${PORT}/health`);
   console.log(`📱 Telegram Bot:   ${process.env.TELEGRAM_BOT_TOKEN ? '✅ Đã cấu hình' : '⚠️ Chưa cấu hình (Xem file .env)'}`);
